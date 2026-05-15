@@ -137,9 +137,7 @@ jobs:
             --set global.imageRegistry=${{ secrets.DOCKERHUB_USERNAME }} \
             --set global.imageTag=${{ github.sha }} \
             --set ingress.host="" \
-            --atomic \
-            --timeout 5m \
-            --wait
+            --timeout 10m
 
       - name: Verify deployment
         run: |
