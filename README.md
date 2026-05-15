@@ -4,7 +4,79 @@ Production-ready deployment of a multi-service URL shortener on AWS EKS with ful
 
 ---
 
-## Architecture
+## Architecture Diagram
+
+```mermaid
+flowchart TB
+    subgraph Internet["🌐 Internet"]
+        User(["👤 User"])
+        Dev(["👨‍💻 Developer"])
+    end
+
+    subgraph CICD["CI/CD Pipeline (GitHub Actions)"]
+        direction LR
+        GH["GitHub\nPush to main"]
+        Test["1. Run Tests"]
+        Sonar["2. SonarCloud\nQuality Gate"]
+        Build["3. Docker Build\n& Push"]
+        DH["DockerHub\nRegistry"]
+        Deploy["4. Helm Deploy\nto EKS"]
+        GH --> Test --> Sonar --> Build --> DH --> Deploy
+    end
+
+    subgraph AWS["☁️ AWS EKS Cluster (eu-north-1)"]
+        subgraph VPC["VPC"]
+            subgraph PublicSubnet["Public Subnets"]
+                NLB["AWS Load Balancer\n(ELB)"]
+            end
+
+            subgraph PrivateSubnet["Private Subnets — Kubernetes Namespace: urlshortener"]
+                Ingress["NGINX Ingress Controller"]
+
+                subgraph Services["Microservices"]
+                    Python["Python Service\n:5000\nDashboard + Analytics\nHPA: 1-5 pods"]
+                    Go["Go Service\n:8000\nURL Shortener\nHPA: 1-5 pods"]
+                    Node["Node Service\n:3000\nURL Metadata\nHPA: 1-5 pods"]
+                end
+
+                Redis["Redis\n:6379\nPub/Sub + Cache"]
+
+                subgraph Monitoring["Namespace: monitoring"]
+                    Prometheus["Prometheus\nMetrics Scraper"]
+                    Grafana["Grafana\nDashboards"]
+                end
+            end
+        end
+    end
+
+    subgraph Terraform["🏗️ Infrastructure (Terraform)"]
+        TF["VPC + EKS Cluster\n+ Node Groups\n+ IAM Roles"]
+    end
+
+    Dev -->|"terraform apply"| Terraform
+    Dev -->|"git push"| CICD
+    Deploy -->|"helm upgrade"| AWS
+
+    User -->|"HTTP"| NLB
+    NLB --> Ingress
+    Ingress -->|"/"| Python
+    Ingress -->|"/go/*"| Go
+    Ingress -->|"/node/*"| Node
+
+    Python -->|"POST /api/shorten"| Go
+    Python -->|"POST /api/metadata"| Node
+    Go -->|"Publish click_events"| Redis
+    Redis -->|"Subscribe click_events"| Python
+    Go -->|"Cache URL lookups"| Redis
+
+    Prometheus -->|"Scrape metrics"| Python
+    Prometheus -->|"Scrape metrics"| Go
+    Prometheus -->|"Scrape metrics"| Node
+    Prometheus -->|"Scrape HPA metrics"| Services
+    Grafana -->|"Query"| Prometheus
+```
+
+## ASCII Architecture
 
 ```
 Internet
