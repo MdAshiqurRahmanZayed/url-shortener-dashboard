@@ -10,7 +10,8 @@ RUN go mod download
 COPY main.go ./
 
 ENV CGO_ENABLED=1
-RUN go build -o urlshortener main.go
+ENV CC=gcc
+RUN go build -o urlshortener .
 
 FROM alpine:3.19
 
