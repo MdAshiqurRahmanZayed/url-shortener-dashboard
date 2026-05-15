@@ -14,3 +14,15 @@ __pycache__/
 # NodeJS
 node_modules/
 package-lock.json
+
+# Terraform
+.terraform/
+.terraform.lock.hcl
+terraform.tfstate
+terraform.tfstate.backup
+*.tfplan
+crash.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json

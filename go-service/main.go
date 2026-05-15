@@ -257,6 +257,7 @@ func main() {
 	})
 
 	// Routes
+	r.GET("/health", func(c *gin.Context) { c.JSON(http.StatusOK, gin.H{"status": "ok"}) })
 	r.POST("/api/shorten", createShortURL)
 	r.GET("/:code", redirect)
 
