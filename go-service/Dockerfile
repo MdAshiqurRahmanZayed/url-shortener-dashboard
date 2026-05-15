@@ -2,7 +2,7 @@ FROM golang:1.24-alpine AS builder
 
 WORKDIR /app
 
-RUN apk add --no-cache gcc musl-dev sqlite-dev
+RUN apk add --no-cache gcc musl-dev
 
 COPY go.mod go.sum ./
 RUN go mod download
@@ -10,11 +10,11 @@ RUN go mod download
 COPY main.go ./
 
 ENV CGO_ENABLED=1
-RUN go build -tags "libsqlite3" -o urlshortener main.go
+RUN go build -o urlshortener main.go
 
 FROM alpine:3.19
 
-RUN apk add --no-cache sqlite-libs ca-certificates && \
+RUN apk add --no-cache ca-certificates && \
     addgroup -S appgroup && adduser -S appuser -G appgroup
 
 WORKDIR /app
