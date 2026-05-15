@@ -2,15 +2,19 @@ FROM golang:1.24-alpine AS builder
 
 WORKDIR /app
 
-RUN apk add --no-cache gcc musl-dev
+RUN apk add --no-cache gcc musl-dev git
 
-COPY go.mod go.sum ./
+COPY go.mod ./
+
+ENV CGO_ENABLED=1 \
+    CC=gcc \
+    GONOSUMDB=* \
+    GOFLAGS=-mod=mod
+
 RUN go mod download
 
 COPY main.go ./
 
-ENV CGO_ENABLED=1
-ENV CC=gcc
 RUN go build -o urlshortener .
 
 FROM alpine:3.19
