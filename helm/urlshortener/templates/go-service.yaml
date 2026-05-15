@@ -1,0 +1,99 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: go-service-config
+  namespace: {{ .Values.global.namespace }}
+data:
+  REDIS_HOST: "redis"
+  REDIS_PORT: "{{ .Values.redis.port }}"
+  PYTHON_SERVICE_URL: "http://{{ .Values.pythonService.name }}:{{ .Values.pythonService.port }}"
+  PORT: "{{ .Values.goService.port }}"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.goService.name }}
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    app: {{ .Values.goService.name }}
+spec:
+  replicas: {{ .Values.goService.replicas }}
+  selector:
+    matchLabels:
+      app: {{ .Values.goService.name }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.goService.name }}
+    spec:
+      containers:
+        - name: {{ .Values.goService.name }}
+          image: "{{ .Values.global.imageRegistry }}/{{ .Values.goService.image }}:{{ .Values.global.imageTag }}"
+          imagePullPolicy: {{ .Values.goService.pullPolicy }}
+          ports:
+            - containerPort: {{ .Values.goService.port }}
+          envFrom:
+            - configMapRef:
+                name: go-service-config
+          resources:
+            {{- toYaml .Values.goService.resources | nindent 12 }}
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: {{ .Values.goService.port }}
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: {{ .Values.goService.port }}
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          volumeMounts:
+            - name: go-data
+              mountPath: /app/data
+      volumes:
+        - name: go-data
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.goService.name }}
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    app: {{ .Values.goService.name }}
+spec:
+  selector:
+    app: {{ .Values.goService.name }}
+  ports:
+    - port: {{ .Values.goService.port }}
+      targetPort: {{ .Values.goService.port }}
+  type: ClusterIP
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ .Values.goService.name }}-hpa
+  namespace: {{ .Values.global.namespace }}
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ .Values.goService.name }}
+  minReplicas: {{ .Values.goService.hpa.minReplicas }}
+  maxReplicas: {{ .Values.goService.hpa.maxReplicas }}
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilizationPercentage: {{ .Values.goService.hpa.targetCPUUtilizationPercentage }}
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilizationPercentage: {{ .Values.goService.hpa.targetMemoryUtilizationPercentage }}

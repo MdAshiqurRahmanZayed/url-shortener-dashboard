@@ -1,0 +1,112 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: python-service-config
+  namespace: {{ .Values.global.namespace }}
+data:
+  REDIS_HOST: "redis"
+  REDIS_PORT: "{{ .Values.redis.port }}"
+  GO_SERVICE_URL: "http://{{ .Values.goService.name }}:{{ .Values.goService.port }}"
+  NODE_SERVICE_URL: "http://{{ .Values.nodeService.name }}:{{ .Values.nodeService.port }}"
+  FLASK_ENV: {{ .Values.pythonService.env.FLASK_ENV | quote }}
+  PORT: "{{ .Values.pythonService.port }}"
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: python-service-secret
+  namespace: {{ .Values.global.namespace }}
+type: Opaque
+stringData:
+  SECRET_KEY: {{ .Values.pythonService.secrets.SECRET_KEY | quote }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.pythonService.name }}
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    app: {{ .Values.pythonService.name }}
+spec:
+  replicas: {{ .Values.pythonService.replicas }}
+  selector:
+    matchLabels:
+      app: {{ .Values.pythonService.name }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.pythonService.name }}
+    spec:
+      containers:
+        - name: {{ .Values.pythonService.name }}
+          image: "{{ .Values.global.imageRegistry }}/{{ .Values.pythonService.image }}:{{ .Values.global.imageTag }}"
+          imagePullPolicy: {{ .Values.pythonService.pullPolicy }}
+          ports:
+            - containerPort: {{ .Values.pythonService.port }}
+          envFrom:
+            - configMapRef:
+                name: python-service-config
+            - secretRef:
+                name: python-service-secret
+          resources:
+            {{- toYaml .Values.pythonService.resources | nindent 12 }}
+          livenessProbe:
+            httpGet:
+              path: /
+              port: {{ .Values.pythonService.port }}
+            initialDelaySeconds: 20
+            periodSeconds: 20
+          readinessProbe:
+            httpGet:
+              path: /
+              port: {{ .Values.pythonService.port }}
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          volumeMounts:
+            - name: python-data
+              mountPath: /app/data
+      volumes:
+        - name: python-data
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.pythonService.name }}
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    app: {{ .Values.pythonService.name }}
+spec:
+  selector:
+    app: {{ .Values.pythonService.name }}
+  ports:
+    - port: {{ .Values.pythonService.port }}
+      targetPort: {{ .Values.pythonService.port }}
+  type: ClusterIP
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ .Values.pythonService.name }}-hpa
+  namespace: {{ .Values.global.namespace }}
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ .Values.pythonService.name }}
+  minReplicas: {{ .Values.pythonService.hpa.minReplicas }}
+  maxReplicas: {{ .Values.pythonService.hpa.maxReplicas }}
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilizationPercentage: {{ .Values.pythonService.hpa.targetCPUUtilizationPercentage }}
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilizationPercentage: {{ .Values.pythonService.hpa.targetMemoryUtilizationPercentage }}

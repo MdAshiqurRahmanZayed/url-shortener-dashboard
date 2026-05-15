@@ -1,0 +1,13 @@
+apiVersion: v2
+name: urlshortener
+description: URL Shortener Microservices Platform
+type: application
+version: 1.0.0
+appVersion: "1.0.0"
+keywords:
+  - url-shortener
+  - microservices
+  - kubernetes
+maintainers:
+  - name: Ashiqur Zayed
+    email: ashiqur.zayed@strativ.se
