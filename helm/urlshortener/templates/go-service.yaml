@@ -90,10 +90,10 @@ spec:
         name: cpu
         target:
           type: Utilization
-          averageUtilizationPercentage: {{ .Values.goService.hpa.targetCPUUtilizationPercentage }}
+          averageUtilization: {{ .Values.goService.hpa.targetCPU }}
     - type: Resource
       resource:
         name: memory
         target:
           type: Utilization
-          averageUtilizationPercentage: {{ .Values.goService.hpa.targetMemoryUtilizationPercentage }}
+          averageUtilization: {{ .Values.goService.hpa.targetMemory }}

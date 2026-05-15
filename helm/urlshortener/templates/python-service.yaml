@@ -103,10 +103,10 @@ spec:
         name: cpu
         target:
           type: Utilization
-          averageUtilizationPercentage: {{ .Values.pythonService.hpa.targetCPUUtilizationPercentage }}
+          averageUtilization: {{ .Values.pythonService.hpa.targetCPU }}
     - type: Resource
       resource:
         name: memory
         target:
           type: Utilization
-          averageUtilizationPercentage: {{ .Values.pythonService.hpa.targetMemoryUtilizationPercentage }}
+          averageUtilization: {{ .Values.pythonService.hpa.targetMemory }}

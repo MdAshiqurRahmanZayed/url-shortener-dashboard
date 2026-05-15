@@ -88,10 +88,10 @@ spec:
         name: cpu
         target:
           type: Utilization
-          averageUtilizationPercentage: {{ .Values.nodeService.hpa.targetCPUUtilizationPercentage }}
+          averageUtilization: {{ .Values.nodeService.hpa.targetCPU }}
     - type: Resource
       resource:
         name: memory
         target:
           type: Utilization
-          averageUtilizationPercentage: {{ .Values.nodeService.hpa.targetMemoryUtilizationPercentage }}
+          averageUtilization: {{ .Values.nodeService.hpa.targetMemory }}

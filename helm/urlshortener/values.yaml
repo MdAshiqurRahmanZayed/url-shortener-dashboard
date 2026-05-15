@@ -38,8 +38,8 @@ pythonService:
   hpa:
     minReplicas: 1
     maxReplicas: 5
-    targetCPUUtilizationPercentage: 70
-    targetMemoryUtilizationPercentage: 80
+    targetCPU: 70
+    targetMemory: 80
   env:
     FLASK_ENV: "production"
   secrets:
@@ -61,8 +61,8 @@ goService:
   hpa:
     minReplicas: 1
     maxReplicas: 5
-    targetCPUUtilizationPercentage: 70
-    targetMemoryUtilizationPercentage: 80
+    targetCPU: 70
+    targetMemory: 80
 
 nodeService:
   name: node-service
@@ -80,7 +80,7 @@ nodeService:
   hpa:
     minReplicas: 1
     maxReplicas: 5
-    targetCPUUtilizationPercentage: 70
-    targetMemoryUtilizationPercentage: 80
+    targetCPU: 70
+    targetMemory: 80
   env:
     NODE_ENV: "production"
